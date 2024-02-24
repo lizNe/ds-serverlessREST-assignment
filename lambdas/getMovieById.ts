@@ -70,7 +70,7 @@ async function fetchMovieData(movieId: number) {
 async function fetchCastData(movieId: number) {
   const commandOutput = await ddbDocClient.send(
     new QueryCommand({
-      TableName: process.env.TABLE_NAME, // Update to your movie cast table name
+      TableName: process.env.TABLE_NAME,
       KeyConditionExpression: "movieId = :m",
       ExpressionAttributeValues: {
         ":m": movieId,
