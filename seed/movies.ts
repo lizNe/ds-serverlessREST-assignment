@@ -1,4 +1,6 @@
 import {Movie, MovieCast} from '../shared/types'
+import { MovieReview } from '../shared/types';
+
 
 export const movies : Movie[] = [
   {
@@ -347,6 +349,32 @@ export const movieCasts: MovieCast[] = [
     actorName: "Joe Bloggs",
     roleName: "Male Character 1",
     roleDescription: "description of character 3",
+  },
+];
+
+
+
+export const movieReviews: MovieReview[] = [
+  {  
+    reviewId: 1001,
+    movieId: 1234,
+    reviewer: "John Doe",
+    rating: 4.5,
+    comment: "Great movie, loved the action scenes!",
+  },
+  {
+    reviewId: 1002,
+    movieId: 1234,
+    reviewer: "Jane Smith",
+    rating: 3.0,
+    comment: "The plot was a bit predictable, but overall enjoyable.",
+  },
+  {
+    reviewId: 1003,
+    movieId: 2345,
+    reviewer: "Alice Johnson",
+    rating: 5.0,
+    comment: "Absolutely loved it! Can't wait for the sequel.",
   },
 ];
 

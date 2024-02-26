@@ -1,2 +1,1 @@
-# Serverless REST web API.
-
+# ds-serverlessREST-assignment
