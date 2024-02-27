@@ -8,7 +8,6 @@ import { Construct } from "constructs";
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 import { generateBatch } from "../shared/util";
 import { movies, movieCasts, movieReviews } from "../seed/movies";
-import * as AWS from "aws-sdk";
 
 
 export class RestAPIStack extends cdk.Stack {
@@ -42,9 +41,25 @@ export class RestAPIStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       tableName: "MovieReviews",
     });
+
+    movieReviewsTable.addLocalSecondaryIndex({
+      indexName: "reviewerNameIx",
+      sortKey: { name: "reviewerName", type: dynamodb.AttributeType.STRING },
+    });
+
+
+
+    // Create a Global Secondary Index (GSI) on movieId
+movieReviewsTable.addGlobalSecondaryIndex({
+  indexName: 'MovieIdIndex',
+  partitionKey: { name: 'movieId', type: dynamodb.AttributeType.NUMBER },
+});
+
+
+
     
 
-     // Functions 
+     //Functions 
      const getMovieByIdFn = new lambdanode.NodejsFunction(
        this,
        "GetMovieByIdFn",
@@ -133,6 +148,23 @@ export class RestAPIStack extends cdk.Stack {
        },
      });
 
+
+     const getMovieReviewByIdFn = new lambdanode.NodejsFunction(
+      this,
+      "GetMovieReviewByIdFn",
+      {
+        architecture: lambda.Architecture.ARM_64,
+        runtime: lambda.Runtime.NODEJS_18_X,
+        entry: `${__dirname}/../lambdas/getMovieReviewById.ts`,
+        timeout: cdk.Duration.seconds(10),
+        memorySize: 128,
+        environment: {
+          TABLE_NAME: movieReviewsTable.tableName,
+          REGION: 'eu-west-1',
+        },
+      }
+    );
+
     new custom.AwsCustomResource(this, "moviesddbInitData", {
       onCreate: {
         service: "DynamoDB",
@@ -141,7 +173,7 @@ export class RestAPIStack extends cdk.Stack {
           RequestItems: {
             [moviesTable.tableName]: generateBatch(movies),
             [movieCastsTable.tableName]: generateBatch(movieCasts),
-            [movieReviewsTable.tableName]: generateBatch(movieReviews), 
+            [movieReviewsTable.tableName]: generateBatch(movieReviews)
             // Added
           },
         },
@@ -152,66 +184,76 @@ export class RestAPIStack extends cdk.Stack {
       }),
     });
 
-     // Permissions 
-     moviesTable.grantReadData(getMovieByIdFn)
-     moviesTable.grantReadData(getAllMoviesFn)
-     moviesTable.grantReadWriteData(newMovieFn)
-     moviesTable.grantReadWriteData(deleteMovieByIdFn)
-     movieCastsTable.grantReadData(getMovieCastMembersFn);
-     movieReviewsTable.grantReadData(addMovieReviewFn);
+      //Permissions 
+      moviesTable.grantReadData(getMovieByIdFn)
+      moviesTable.grantReadData(getAllMoviesFn)
+      moviesTable.grantReadWriteData(newMovieFn)
+      moviesTable.grantReadWriteData(deleteMovieByIdFn)
+      movieCastsTable.grantReadData(getMovieCastMembersFn);
+      movieReviewsTable.grantReadWriteData(addMovieReviewFn);
+      movieReviewsTable.grantReadData(getMovieReviewByIdFn);
 
 
 
 
 
 
-    // // REST API 
-     const api = new apig.RestApi(this, "RestAPI", {
-       description: "demo api",
-       deployOptions: {
-         stageName: "dev",
-       },
-       defaultCorsPreflightOptions: {
-         allowHeaders: ["Content-Type", "X-Amz-Date"],
-         allowMethods: ["OPTIONS", "GET", "POST", "PUT", "PATCH", "DELETE"],
-         allowCredentials: true,
-         allowOrigins: ["*"],
-       },
-     });
 
-     const moviesEndpoint = api.root.addResource("movies");
-     moviesEndpoint.addMethod(
-       "GET",
-       new apig.LambdaIntegration(getAllMoviesFn, { proxy: true })
-     );
+       //REST API 
+      const api = new apig.RestApi(this, "RestAPI", {
+        description: "demo api",
+        deployOptions: {
+          stageName: "dev",
+        },
+        defaultCorsPreflightOptions: {
+          allowHeaders: ["Content-Type", "X-Amz-Date"],
+          allowMethods: ["OPTIONS", "GET", "POST", "PUT", "PATCH", "DELETE"],
+          allowCredentials: true,
+          allowOrigins: ["*"],
+        },
+      });
 
-     const movieEndpoint = moviesEndpoint.addResource("{movieId}");
-     movieEndpoint.addMethod(
-       "GET",
-       new apig.LambdaIntegration(getMovieByIdFn, { proxy: true })
-     );
+      const moviesEndpoint = api.root.addResource("movies");
+      moviesEndpoint.addMethod(
+        "GET",
+        new apig.LambdaIntegration(getAllMoviesFn, { proxy: true })
+      );
 
-     moviesEndpoint.addMethod(
-       "POST",
-       new apig.LambdaIntegration(newMovieFn, { proxy: true })
-     );
+      const movieEndpoint = moviesEndpoint.addResource("{movieId}");
+      movieEndpoint.addMethod(
+        "GET",
+        new apig.LambdaIntegration(getMovieByIdFn, { proxy: true })
+      );
 
-     movieEndpoint.addMethod(
-       "DELETE",
-       new apig.LambdaIntegration(deleteMovieByIdFn, { proxy: true })
-     );
+      moviesEndpoint.addMethod(
+        "POST",
+        new apig.LambdaIntegration(newMovieFn, { proxy: true })
+      );
 
-     const movieCastEndpoint = moviesEndpoint.addResource("cast");
-     movieCastEndpoint.addMethod(
-       "GET",
-       new apig.LambdaIntegration(getMovieCastMembersFn, { proxy: true })
-     );
+      movieEndpoint.addMethod(
+        "DELETE",
+        new apig.LambdaIntegration(deleteMovieByIdFn, { proxy: true })
+      );
 
-     const movieReviewsEndpoint = moviesEndpoint.addResource("reviews");
-     movieReviewsEndpoint.addMethod(
-       "POST",
-       new apig.LambdaIntegration(addMovieReviewFn, { proxy: true })
-     );
+      const movieCastEndpoint = moviesEndpoint.addResource("cast");
+      movieCastEndpoint.addMethod(
+        "GET",
+        new apig.LambdaIntegration(getMovieCastMembersFn, { proxy: true })
+      );
+
+      const movieReviewsEndpoint = moviesEndpoint.addResource("reviews");
+      movieReviewsEndpoint.addMethod(
+        "POST",
+        new apig.LambdaIntegration(addMovieReviewFn, { proxy: true })
+      );
+
+      const movieReviewsByIdEndpoint = movieEndpoint.addResource("reviews");
+      movieReviewsByIdEndpoint.addMethod(
+        "GET",
+        new apig.LambdaIntegration(getMovieReviewByIdFn, { proxy: true })
+      );
+      
+      
 
   }
 }
