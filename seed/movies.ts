@@ -1,4 +1,4 @@
-import {Movie, MovieCast, MovieReview} from '../shared/types'
+import {Movie, MovieReview} from '../shared/types'
 
 
 
@@ -183,54 +183,30 @@ export const movies : Movie[] = [
  
 ]
 
-export const movieCasts: MovieCast[] = [
-  {
-    movieId: 1234,
-    actorName: "Joe Bloggs",
-    roleName: "Male Character 1",
-    roleDescription: "description of character 1",
-  },
-  {
-    movieId: 1234,
-    actorName: "Alice Broggs",
-    roleName: "Female Character 1",
-    roleDescription: "description of character 2",
-  },
-  {
-    movieId: 1234,
-    actorName: "Joe Cloggs",
-    roleName: "Male Character 2",
-    roleDescription: "description of character 3",
-  },
-  {
-    movieId: 2345,
-    actorName: "Joe Bloggs",
-    roleName: "Male Character 1",
-    roleDescription: "description of character 3",
-  },
-];
+
 
 export const movieReviews: MovieReview[] = [
-    {  
-      reviewId: 1001,
-      movieId: 1234,
-      reviewerName: "John Doe",
-      rating: 4.5,
-      comment: "Great movie, loved the action scenes!",
-    },
+
     {
-      reviewId: 1002,
       movieId: 1234,
-      reviewerName: "Jane Smith",
-      rating: 3.0,
-      comment: "The plot was a bit predictable, but overall enjoyable.",
-    },
-    {
-      reviewId: 1003,
-      movieId: 2345,
       reviewerName: "Alice Johnson",
-      rating: 5.0,
-      comment: "Absolutely loved it! Can't wait for the sequel.",
+      reviewDate: "2024-02-10",
+      content: "Absolutely loved it! Can't wait for the sequel.",
+      rating:7
+    },
+    {
+      movieId: 1234,
+      reviewerName: "Joe Son",
+      reviewDate: "2024-02-15",
+      content: "Surprise in the end. Good Movie!",
+      rating:4
+    },
+    {
+      movieId: 2345,
+      reviewerName: "Peter Aleck",
+      reviewDate: "2024-02-20",
+      content: "Cool Movie. Best I seen lately.",
+      rating:2
     },
   ];
 

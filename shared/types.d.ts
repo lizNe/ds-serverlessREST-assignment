@@ -17,30 +17,21 @@ export type Movie =   {
   vote_count: number
 };
 
-export type MovieCast = {
-  movieId: number;
-  actorName: string;
-  roleName: string;
-  roleDescription: string;
-};
-// Used to validate the query string og HTTP Get requests
-export type MovieCastMemberQueryParams = {
-  movieId: string;
-  actorName?: string;
-  roleName?: string
-};
 
 export type MovieReview = {
-  reviewId: number;
   movieId: number;
   reviewerName: string;
-  rating: number;
-  comment: string;
+  reviewDate: string;
+  content: string;
+  rating:number;
 };
 
+
+
+
 export type MovieReviewQueryParams = {
-  movieId: number;
-  minRating?: number;
+  movieId: string;
+  rating?: string;
   reviewerName?: string;
 };
 
