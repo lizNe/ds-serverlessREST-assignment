@@ -21,7 +21,6 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
     const parameters = event.pathParameters;
     const queryParams = event.queryStringParameters;
 
-
     // Assign movieId from path parameters
     const movieIdFromPath = parameters?.movieId ? parseInt(parameters.movieId) : undefined;
 
@@ -42,6 +41,12 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
       };
     }
 
+     // Extract reviewerName from path parameters
+     const reviewerName = parameters?.reviewerName;
+
+    // Extract minRating from query parameters
+    const minRating = queryParams?.minRating ? parseFloat(queryParams.minRating) : undefined;
+
     // Prepare the DynamoDB query command input
     let commandInput: QueryCommandInput = {
       TableName: process.env.TABLE_NAME,
@@ -50,39 +55,37 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
         ":m": movieId,
       },
     };
-    
-    
 
-    if (queryParams && isValidQueryParams(queryParams)) {
-      if ("reviewerName" in queryParams) {
-        commandInput = {
-        ...commandInput,
-        IndexName: "reviewerNameIx",
-        KeyConditionExpression: " movieId = :m and begins_with(reviewerName, :r)",
-        ExpressionAttributeValues: {
-          ":m": movieId,
-          ":r": queryParams.reviewerName,
-        },
-      };
-      } else if ("rating" in queryParams) {
-        commandInput = {
-          ...commandInput,
-        KeyConditionExpression: "movieId = :m and rating >= :rating",
-        ExpressionAttributeValues:{
-          ":m": movieId,
-          ":rating": queryParams.rating,
-        },
-      };
-    } else {
+    // Extract year from path parameters
+const year = parameters?.year ? parseInt(parameters.year) : undefined;
+
+// Check if year is provided
+if (year) {
+  commandInput.FilterExpression = "begins_with(reviewDate, :year)";
+  commandInput.ExpressionAttributeValues = {
+    ...commandInput.ExpressionAttributeValues,
+    ":year": year.toString(),
+  };
+}
+
+// // Check if reviewerName is provided
+ if (reviewerName) {
+   commandInput.FilterExpression = "reviewerName = :reviewerName";
+  commandInput.ExpressionAttributeValues = commandInput.ExpressionAttributeValues || {}; // Initialize if undefined
+  commandInput.KeyConditionExpression += " AND reviewerName = :r";
+  commandInput.ExpressionAttributeValues[":r"] = reviewerName; }
+
+    // Check if minRating is provided and valid
+    if (minRating && minRating >= 0 && minRating <= 10) {
       commandInput = {
         ...commandInput,
-        KeyConditionExpression: "movieId = :m",
+        FilterExpression: "rating >= :minRating",
         ExpressionAttributeValues: {
-          ":m": movieId,
+          ...commandInput.ExpressionAttributeValues,
+          ":minRating": minRating,
         },
       };
     }
-  }
 
     // Execute the DynamoDB query
     const commandOutput = await ddbDocClient.send(new QueryCommand(commandInput));
