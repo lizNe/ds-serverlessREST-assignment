@@ -133,6 +133,22 @@ export class RestAPIStack extends cdk.Stack {
       }
     );
 
+    const getReviewerNameFn = new lambdanode.NodejsFunction(
+      this,
+      "GetReviewerNameFn",
+      {
+        architecture: lambda.Architecture.ARM_64,
+        runtime: lambda.Runtime.NODEJS_18_X,
+        entry: `${__dirname}/../lambdas/getReviewerName.ts`,
+        timeout: cdk.Duration.seconds(10),
+        memorySize: 128,
+        environment: {
+          TABLE_NAME: movieReviewsTable.tableName,
+          REGION: 'eu-west-1',
+        },
+      }
+    );
+
 
     new custom.AwsCustomResource(this, "moviesddbInitData", {
       onCreate: {
@@ -220,7 +236,11 @@ export class RestAPIStack extends cdk.Stack {
         new apig.LambdaIntegration(getMovieReviewByIdFn, { proxy: true })
       );
 
-      
+      const reviewerNameEndpoint = movieReviewsEndpoint.addResource("{reviewerName}")
+      reviewerNameEndpoint.addMethod(
+        "GET",
+        new apig.LambdaIntegration(getReviewerNameFn, { proxy: true })
+      );
       
 
   }

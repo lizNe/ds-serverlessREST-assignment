@@ -61,19 +61,28 @@ const year = parameters?.year ? parseInt(parameters.year) : undefined;
 
 // Check if year is provided
 if (year) {
-  commandInput.FilterExpression = "begins_with(reviewDate, :year)";
-  commandInput.ExpressionAttributeValues = {
-    ...commandInput.ExpressionAttributeValues,
-    ":year": year.toString(),
+  commandInput = {
+    ...commandInput,
+    IndexName: "reviewDateIx",
+    FilterExpression: "begins_with(reviewDate, :year)",
+    ExpressionAttributeValues: {
+      ":m": movieId,
+      ":year": year.toString(),
+    },
   };
 }
 
-// // Check if reviewerName is provided
- if (reviewerName) {
-   commandInput.FilterExpression = "reviewerName = :reviewerName";
-  commandInput.ExpressionAttributeValues = commandInput.ExpressionAttributeValues || {}; // Initialize if undefined
-  commandInput.KeyConditionExpression += " AND reviewerName = :r";
-  commandInput.ExpressionAttributeValues[":r"] = reviewerName; }
+// Check if reviewerName is provided
+if (reviewerName) {
+  commandInput = {
+    ...commandInput,
+    FilterExpression: "reviewerName = :reviewerName",
+    ExpressionAttributeValues: {
+      ":m": movieId,
+      ":reviewerName": reviewerName,
+    },
+  };
+}
 
     // Check if minRating is provided and valid
     if (minRating && minRating >= 0 && minRating <= 10) {
