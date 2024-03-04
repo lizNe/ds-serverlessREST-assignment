@@ -22,13 +22,9 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
     const queryParams = event.queryStringParameters;
 
     // Assign movieId from path parameters
-    const movieIdFromPath = parameters?.movieId ? parseInt(parameters.movieId) : undefined;
+    const movieId = parameters?.movieId ? parseInt(parameters.movieId) : undefined;
 
-    // Assign movieId from query parameters
-    const movieIdFromQuery = queryParams?.movieId ? parseInt(queryParams.movieId) : undefined;
 
-    // Use the movieId from either path parameters or query parameters
-    const movieId = movieIdFromPath || movieIdFromQuery;
 
     // Check if movieId is missing
     if (!movieId) {
@@ -41,13 +37,12 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
       };
     }
 
-     // Extract reviewerName from path parameters
-     const reviewerName = parameters?.reviewerName;
+
 
     // Extract minRating from query parameters
     const minRating = queryParams?.minRating ? parseFloat(queryParams.minRating) : undefined;
 
-    // Prepare the DynamoDB query command input
+    // Prepare the DynamoDB query command input  /// What lambdas function will return this is what the QueryCommandInput is. Query String part of the evtn obfect 
     let commandInput: QueryCommandInput = {
       TableName: process.env.TABLE_NAME,
       KeyConditionExpression: "movieId = :m",
@@ -56,33 +51,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
       },
     };
 
-    // Extract year from path parameters
-const year = parameters?.year ? parseInt(parameters.year) : undefined;
 
-// Check if year is provided
-if (year) {
-  commandInput = {
-    ...commandInput,
-    IndexName: "reviewDateIx",
-    FilterExpression: "begins_with(reviewDate, :year)",
-    ExpressionAttributeValues: {
-      ":m": movieId,
-      ":year": year.toString(),
-    },
-  };
-}
-
-// Check if reviewerName is provided
-if (reviewerName) {
-  commandInput = {
-    ...commandInput,
-    FilterExpression: "reviewerName = :reviewerName",
-    ExpressionAttributeValues: {
-      ":m": movieId,
-      ":reviewerName": reviewerName,
-    },
-  };
-}
 
     // Check if minRating is provided and valid
     if (minRating && minRating >= 0 && minRating <= 10) {
@@ -96,7 +65,7 @@ if (reviewerName) {
       };
     }
 
-    // Execute the DynamoDB query
+    // Execute the DynamoDB query. Will contain item ovjects .JSON OBJECTS HERE .. Add a filtering of an array of items to pick out the ones with the relevant rating . 
     const commandOutput = await ddbDocClient.send(new QueryCommand(commandInput));
 
     // Return the query results
@@ -134,3 +103,6 @@ function createDocumentClient() {
   const translateConfig = { marshallOptions, unmarshallOptions };
   return DynamoDBDocumentClient.from(ddbClient, translateConfig);
 }
+
+
+/////ONLY NEED PATH PARAMETERS FOR REVIEWERNMAE 

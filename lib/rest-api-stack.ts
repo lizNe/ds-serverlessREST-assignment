@@ -176,6 +176,8 @@ export class RestAPIStack extends cdk.Stack {
       movieReviewsTable.grantReadWriteData(addMovieReviewFn);
       movieReviewsTable.grantReadData(getMovieReviewByIdFn);
       movieReviewsTable.grantReadData(getMovieReviewByIdFn);
+      movieReviewsTable.grantReadData(getReviewerNameFn);
+
 
 
 
