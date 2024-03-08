@@ -189,22 +189,22 @@ export const movieReviews: MovieReview[] = [
 
     {
       movieId: 1234,
-      reviewerName: "Alice Johnson",
+      reviewerName: "Alice",
       reviewDate: "2024-02-10",
       content: "Absolutely loved it! Can't wait for the sequel.",
-      rating:7
+      rating:5
     },
     {
       movieId: 1234,
-      reviewerName: "Joe Son",
-      reviewDate: "2024-02-15",
+      reviewerName: "Joe",
+      reviewDate: "2023-02-15",
       content: "Surprise in the end. Good Movie!",
       rating:4
     },
     {
       movieId: 2345,
-      reviewerName: "Peter Aleck",
-      reviewDate: "2024-02-20",
+      reviewerName: "Peter",
+      reviewDate: "2023-02-20",
       content: "Cool Movie. Best I seen lately.",
       rating:2
     },
