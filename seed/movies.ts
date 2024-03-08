@@ -208,6 +208,14 @@ export const movieReviews: MovieReview[] = [
       content: "Cool Movie. Best I seen lately.",
       rating:2
     },
+    {
+      movieId: 2345,
+      reviewerName: "Alice",
+      reviewDate: "2024-09-16",
+      content: "Cool Cool Movie would recommend to anyone",
+      rating:6
+    },
+    
   ];
 
 

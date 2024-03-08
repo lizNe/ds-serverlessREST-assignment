@@ -182,6 +182,22 @@ export class RestAPIStack extends cdk.Stack {
       }
     );
 
+    const getReviewsByReviewerNameFn = new lambdanode.NodejsFunction(
+      this,
+      "GetReviewsByReviewerNameFn",
+      {
+        architecture: lambda.Architecture.ARM_64,
+        runtime: lambda.Runtime.NODEJS_18_X,
+        entry: `${__dirname}/../lambdas/getReviewsByReviewerName.ts`,
+        timeout: cdk.Duration.seconds(10),
+        memorySize: 128,
+        environment: {
+          TABLE_NAME: movieReviewsTable.tableName,
+          REGION: 'eu-west-1',
+        },
+      }
+    );
+
 
     new custom.AwsCustomResource(this, "moviesddbInitData", {
       onCreate: {
@@ -194,10 +210,10 @@ export class RestAPIStack extends cdk.Stack {
             // Added
           },
         },
-        physicalResourceId: custom.PhysicalResourceId.of("moviesddbInitData"), //.of(Date.now().toString()),
+        physicalResourceId: custom.PhysicalResourceId.of("moviesddbInitData"), 
       },
       policy: custom.AwsCustomResourcePolicy.fromSdkCalls({
-        resources: [moviesTable.tableArn, movieReviewsTable.tableArn],  // Includes movie cast
+        resources: [moviesTable.tableArn, movieReviewsTable.tableArn],  
       }),
     });
 
@@ -211,7 +227,9 @@ export class RestAPIStack extends cdk.Stack {
       movieReviewsTable.grantReadData(getMovieReviewByIdFn);
       movieReviewsTable.grantReadData(getReviewerNameFn);
       movieReviewsTable.grantReadWriteData(editReviewFn);
-      moviesTable.grantReadData(getReviewByYearFn)
+      movieReviewsTable.grantReadData(getReviewByYearFn)
+      movieReviewsTable.grantReadData(getReviewsByReviewerNameFn)
+
 
 
 
@@ -295,14 +313,23 @@ export class RestAPIStack extends cdk.Stack {
 
 
 
-     ///Year
-      const yearEndpoint = movieReviewsEndpoint.addResource("{year}")
-      yearEndpoint.addMethod(
-        "GET",
-        new apig.LambdaIntegration(getReviewByYearFn, { proxy: true })
-      );
+    //  ///Year
+    //   const yearEndpoint = movieReviewsEndpoint.addResource("{year}")
+    //   yearEndpoint.addMethod(
+    //     "GET",
+    //     new apig.LambdaIntegration(getReviewByYearFn, { proxy: true })
+    //   );
 
 
+    // Create a new resource for the reviews by reviewer name endpoint at the root level
+const reviewerReviewsEndpoint = api.root.addResource("reviews");
+const reviewerNameResource = reviewerReviewsEndpoint.addResource("{reviewerName}");
+
+// Add a method to the reviewer name resource for GET
+reviewerNameResource.addMethod(
+  "GET",
+  new apig.LambdaIntegration(getReviewsByReviewerNameFn, { proxy: true })
+);
 
       
       

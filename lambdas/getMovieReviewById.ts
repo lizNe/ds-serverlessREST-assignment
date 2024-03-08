@@ -42,7 +42,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
     // Extract minRating from query parameters
     const minRating = queryParams?.minRating ? parseFloat(queryParams.minRating) : undefined;
 
-    // Prepare the DynamoDB query command input  /// What lambdas function will return this is what the QueryCommandInput is. Query String part of the evtn obfect 
+    // Prepare the DynamoDB query command input  /// What lambdas function will return this is what the QueryCommandInput is. Query String part of the evtn object 
     let commandInput: QueryCommandInput = {
       TableName: process.env.TABLE_NAME,
       KeyConditionExpression: "movieId = :m",
