@@ -34,6 +34,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
     const movieId = parseInt(parameters.movieId);
     const reviewerName = parameters.reviewerName;
 
+
     const reviews = await getReviewerByName(movieId, reviewerName);
 
     return {

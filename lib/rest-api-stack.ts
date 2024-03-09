@@ -198,6 +198,22 @@ export class RestAPIStack extends cdk.Stack {
       }
     );
 
+    const getReviewsTranslateFn = new lambdanode.NodejsFunction(
+      this,
+      "GetReviewsTranslateFn",
+      {
+        architecture: lambda.Architecture.ARM_64,
+        runtime: lambda.Runtime.NODEJS_18_X,
+        entry: `${__dirname}/../lambdas/getReviewsTranslate.ts`,
+        timeout: cdk.Duration.seconds(10),
+        memorySize: 128,
+        environment: {
+          TABLE_NAME: movieReviewsTable.tableName,
+          REGION: 'eu-west-1',
+        },
+      }
+    );
+
 
     new custom.AwsCustomResource(this, "moviesddbInitData", {
       onCreate: {
@@ -229,6 +245,8 @@ export class RestAPIStack extends cdk.Stack {
       movieReviewsTable.grantReadWriteData(editReviewFn);
       movieReviewsTable.grantReadData(getReviewByYearFn)
       movieReviewsTable.grantReadData(getReviewsByReviewerNameFn)
+      movieReviewsTable.grantReadData(getReviewsTranslateFn)
+
 
 
 
@@ -311,7 +329,7 @@ export class RestAPIStack extends cdk.Stack {
         new apig.LambdaIntegration(editReviewFn, { proxy: true })
       );
 
-
+// CANT SEEM TO BE ABLE TO ASS 2 RESOURCES TO SAME ENDPOINT
 
     //  ///Year
     //   const yearEndpoint = movieReviewsEndpoint.addResource("{year}")
@@ -326,6 +344,12 @@ const reviewerReviewsEndpoint = api.root.addResource("reviews");
 const reviewerNameResource = reviewerReviewsEndpoint.addResource("{reviewerName}");
 
 // Add a method to the reviewer name resource for GET
+reviewerReviewsEndpoint.addMethod(
+  "GET",
+  new apig.LambdaIntegration(getReviewsTranslateFn, { proxy: true })
+);
+
+//Translation starting from reviews/ . Will add reviewername and movieId (If this is correct)
 reviewerNameResource.addMethod(
   "GET",
   new apig.LambdaIntegration(getReviewsByReviewerNameFn, { proxy: true })
