@@ -8,11 +8,16 @@ import { Construct } from "constructs";
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 import { generateBatch } from "../shared/util";
 import { movies, movieReviews } from "../seed/movies";
+import * as node from "aws-cdk-lib/aws-lambda-nodejs";
 
 
-export class RestAPIStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-    super(scope, id, props);
+type AppApiProps = {
+  userPoolId: string;
+  userPoolClientId: string;
+};
+export class AppApi extends Construct {
+  constructor(scope: Construct, id: string, props: AppApiProps) {
+    super(scope, id);
 
     // Tables 
     const moviesTable = new dynamodb.Table(this, "MoviesTable", {
@@ -260,8 +265,9 @@ export class RestAPIStack extends cdk.Stack {
 
 
        //REST API 
-      const api = new apig.RestApi(this, "RestAPI", {
-        description: "demo api",
+      const appApi = new apig.RestApi(this, "AppApi", {
+        description: "App RestApi",
+        endpointTypes: [apig.EndpointType.REGIONAL],
         deployOptions: {
           stageName: "dev",
         },
@@ -269,11 +275,68 @@ export class RestAPIStack extends cdk.Stack {
           allowHeaders: ["Content-Type", "X-Amz-Date"],
           allowMethods: ["OPTIONS", "GET", "POST", "PUT", "PATCH", "DELETE"],
           allowCredentials: true,
-          allowOrigins: ["*"],
+          allowOrigins: apig.Cors.ALL_ORIGINS,
         },
       });
 
-      const moviesEndpoint = api.root.addResource("movies");
+      const appCommonFnProps = {
+        architecture: lambda.Architecture.ARM_64,
+        timeout: cdk.Duration.seconds(10),
+        memorySize: 128,
+        runtime: lambda.Runtime.NODEJS_16_X,
+        handler: "handler",
+        environment: {
+          USER_POOL_ID: props.userPoolId,
+          CLIENT_ID: props.userPoolClientId,
+          REGION: cdk.Aws.REGION,
+        },
+      };
+
+      const protectedRes = appApi.root.addResource("protected");
+
+      const publicRes = appApi.root.addResource("public");
+  
+      const protectedFn = new node.NodejsFunction(this, "ProtectedFn", {
+        ...appCommonFnProps,
+        entry: "./lambdas/protected.ts",
+      });
+  
+      const publicFn = new node.NodejsFunction(this, "PublicFn", {
+        ...appCommonFnProps,
+        entry: "./lambdas/public.ts",
+      });
+  
+      const authorizerFn = new node.NodejsFunction(this, "AuthorizerFn", {
+        ...appCommonFnProps,
+        entry: "./lambdas/auth/authorizer.ts",
+      });
+  
+      const requestAuthorizer = new apig.RequestAuthorizer(
+        this,
+        "RequestAuthorizer",
+        {
+          identitySources: [apig.IdentitySource.header("cookie")],
+          handler: authorizerFn,
+          resultsCacheTtl: cdk.Duration.minutes(0),
+        }
+      );
+  
+      protectedRes.addMethod("GET", new apig.LambdaIntegration(protectedFn), {
+        authorizer: requestAuthorizer,
+        authorizationType: apig.AuthorizationType.CUSTOM,
+      });
+  
+      publicRes.addMethod("GET", new apig.LambdaIntegration(publicFn));
+    
+
+
+      //////////////////////////////////////////////////////////////////////
+
+
+
+
+
+      const moviesEndpoint = appApi.root.addResource("movies");
       moviesEndpoint.addMethod(
         "GET",
         new apig.LambdaIntegration(getAllMoviesFn, { proxy: true })
@@ -281,7 +344,11 @@ export class RestAPIStack extends cdk.Stack {
 
       moviesEndpoint.addMethod(
         "POST",
-        new apig.LambdaIntegration(newMovieFn, { proxy: true })
+        new apig.LambdaIntegration(newMovieFn, { proxy: true }),
+        {
+          authorizer: requestAuthorizer,
+          authorizationType: apig.AuthorizationType.CUSTOM,
+        }
       );
 
 
@@ -295,7 +362,11 @@ export class RestAPIStack extends cdk.Stack {
 
       movieEndpoint.addMethod(
         "DELETE",
-        new apig.LambdaIntegration(deleteMovieByIdFn, { proxy: true })
+        new apig.LambdaIntegration(deleteMovieByIdFn, { proxy: true }),
+        {
+          authorizer: requestAuthorizer,
+          authorizationType: apig.AuthorizationType.CUSTOM,
+        }
       );
 
 
@@ -304,7 +375,11 @@ export class RestAPIStack extends cdk.Stack {
       // Add methods to the reviews endpoint for POST and GET
       reviewsEndpoint.addMethod(
         "POST",
-        new apig.LambdaIntegration(addMovieReviewFn, { proxy: true })
+        new apig.LambdaIntegration(addMovieReviewFn, { proxy: true }),
+        {
+          authorizer: requestAuthorizer,
+          authorizationType: apig.AuthorizationType.CUSTOM,
+        }
       );
 
 
@@ -326,7 +401,11 @@ export class RestAPIStack extends cdk.Stack {
 
       reviewerNameEndpoint.addMethod(
         "PUT",
-        new apig.LambdaIntegration(editReviewFn, { proxy: true })
+        new apig.LambdaIntegration(editReviewFn, { proxy: true }),
+        {
+          authorizer: requestAuthorizer,
+          authorizationType: apig.AuthorizationType.CUSTOM,
+        }
       );
 
 // CANT SEEM TO BE ABLE TO ASS 2 RESOURCES TO SAME ENDPOINT
@@ -340,7 +419,7 @@ export class RestAPIStack extends cdk.Stack {
 
 
     // Create a new resource for the reviews by reviewer name endpoint at the root level
-const reviewerReviewsEndpoint = api.root.addResource("reviews");
+const reviewerReviewsEndpoint = appApi.root.addResource("reviews");
 const reviewerNameResource = reviewerReviewsEndpoint.addResource("{reviewerName}");
 
 // Add a method to the reviewer name resource for GET

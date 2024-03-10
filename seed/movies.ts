@@ -213,7 +213,7 @@ export const movieReviews: MovieReview[] = [
       reviewerName: "Alice",
       reviewDate: "2024-09-16",
       content: "Cool Cool Movie would recommend to anyone",
-      rating:6
+      rating:1
     },
     
   ];
