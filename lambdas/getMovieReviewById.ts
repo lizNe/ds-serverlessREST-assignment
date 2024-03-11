@@ -54,10 +54,10 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
 
 
     // Check if minRating is provided and valid
-    if (minRating && minRating >= 0 && minRating <= 10) {
+    if (minRating && minRating >= 1 && minRating <= 5) {
       commandInput = {
         ...commandInput,
-        FilterExpression: "rating >= :minRating",
+        FilterExpression: "rating > :minRating",
         ExpressionAttributeValues: {
           ...commandInput.ExpressionAttributeValues,
           ":minRating": minRating,

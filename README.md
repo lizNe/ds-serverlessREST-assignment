@@ -13,7 +13,7 @@ Using the same AuthApi URL and AppApiUrl, I was able to retrieve these endpoints
 The endpoints that I was able to successfully retrieve are as follows:
 - `POST /movies/reviews` - add a movie review. Authentication added. ![POST Movie Reviews](image-4.png)
 - `GET /movies/{movieId}/reviews` - Get all the reviews for the specified movie. ![GET reviews for MovieId](image-5.png)
-- `GET /movies/{movieId}/reviews?minRating=n` - Get the reviews for the specified movie with a rating greater than the minRating. ![GET MinRating](image-6.png)
+- `GET /movies/{movieId}/reviews?minRating=n` - Get the reviews for the specified movie with a rating greater than the minRating. ![MinRating](image-17.png)
 - `GET /movies/{movieId}/reviews/{reviewerName}` - Get the review written by the named reviewer for the specified movie. ![GET ReviewerName](image-7.png)
 - `PUT /movies/{movieId}/reviews/{reviewerName}` - Update the text of a review. Authentication added. ![PUT Update Content Review](image-8.png) ![Review Updated](image-9.png)
 - `GET /reviews/{reviewerName}` - Get all the reviews written by a specific reviewer. ![GET Reviews by ReviewerName](image-10.png)
